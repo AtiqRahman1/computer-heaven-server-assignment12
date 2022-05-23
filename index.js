@@ -16,6 +16,7 @@ async function run() {
     try {
         await client.connect();
         const partCollection = client.db('computer_heaven').collection('parts');
+        const reviewCollection = client.db('computer_heaven').collection('reviews');
 
         app.get('/part', async (req, res) => {
             const query = {};
@@ -23,6 +24,13 @@ async function run() {
             const parts = await cursor.toArray();
             res.send(parts);
         });
+
+        app.get('/review', async (req, res) => {
+            const query = {};
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
+        })
 
 
     }
