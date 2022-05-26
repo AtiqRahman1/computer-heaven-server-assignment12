@@ -17,6 +17,8 @@ async function run() {
         await client.connect();
         const partCollection = client.db('computer_heaven').collection('parts');
         const reviewCollection = client.db('computer_heaven').collection('reviews');
+        const orderCollection = client.db('computer_heaven').collection('orders');
+
 
         app.get('/part', async (req, res) => {
             const query = {};
@@ -30,7 +32,15 @@ async function run() {
             const cursor = reviewCollection.find(query);
             const reviews = await cursor.toArray();
             res.send(reviews);
-        })
+        });
+
+
+
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result);
+        });
 
 
     }
