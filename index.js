@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -35,6 +37,7 @@ async function run() {
         const reviewCollection = client.db('computer_heaven').collection('reviews');
         const orderCollection = client.db('computer_heaven').collection('orders');
         const userCollection = client.db('computer_heaven').collection('users');
+        const paymentCollection = client.db('computer_heaven').collection('payments');
 
 
         app.get('/part', async (req, res) => {
@@ -114,6 +117,35 @@ async function run() {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result);
+        });
+
+        app.patch('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+
+            const updatedOrder = await orderCollection.updateOne(filter, updateDoc);
+            const result = await paymentCollection.insertOne(payment);
+            res.send(updatedOrder)
+
+        })
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const product = req.body;
+            const price = product.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
         });
 
 
